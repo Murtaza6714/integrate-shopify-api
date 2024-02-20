@@ -41,7 +41,7 @@ module.exports = class Apis {
                 headers
             };
             let result = await axios.get(url, payload);
-            return result.data;
+            return result;
         } catch (error) {
             throw error;
         }

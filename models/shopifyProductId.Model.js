@@ -24,6 +24,9 @@ const ShopifyProductIdModel = sequelize.define('shopify_product_id', {
     price: {
         type: Sequelize.FLOAT,
     },
+    compare_at_price: {
+        type: Sequelize.FLOAT,
+    },
     stock: {
         type: Sequelize.INTEGER,
     },
