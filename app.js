@@ -107,7 +107,11 @@ const addShopifyProductsToDatabase = async () => {
     throw error;
   }
 };
-
+function delay(seconds) {
+  return new Promise(resolve => {
+    setTimeout(resolve, seconds * 1000);
+  });
+}
 const updateProductsDataToShopify = async (virtualProductsTable) => {
   try {
     for (let product of virtualProductsTable) {
@@ -143,6 +147,7 @@ const updateProductsDataToShopify = async (virtualProductsTable) => {
         inventory_item_id: product.inventory_item_id,
         available_adjustment: product.Update_Stock,
       };
+      await delay(1)
       await axios.post(postVariantStockUrl, postStockParams, headers);
       logger.info(`Product with id ${product.product_id} has been updated with stock ${product["SysStock"]} and ${flag? `with price ${postProductPriceParams.variant.price}`:`no price updated`}`);
     }
@@ -170,29 +175,30 @@ app.get("/all-products", async (req, res, next) => {
     return res.status(200).json({ ...response, data: response1 });
   } catch (error) {
     logger.error("Error Products Update!");
+    console.log(error)
     next(error);
   }
 });
 
-// cron.schedule("0 0 * * *", async () => {
-//   try {
-//     const response = await addShopifyProductsToDatabase();
+cron.schedule("0 0 * * *", async () => {
+  try {
+    const response = await addShopifyProductsToDatabase();
 
-//     // const productsIndserted = await ShopifyProductIdModel.bulkCreate(params)
-//     logger.info(
-//       "Shopify Products destroyed and saved Successfully in database!"
-//     );
+    // const productsIndserted = await ShopifyProductIdModel.bulkCreate(params)
+    logger.info(
+      "Shopify Products destroyed and saved Successfully in database!"
+    );
 
-//     const virtualProductsTable = await sequelize.query(
-//       "SELECT * FROM vhs_LCW_StockPrice"
-//     );
-//     const postProductPromise = [];
-//     const response1 = await updateProductsDataToShopify(virtualProductsTable[0])
-//     logger.info("Shopify Products Updated Successfully!");
-//   } catch (error) {
-//     throw error;
-//   }
-// });
+    const virtualProductsTable = await sequelize.query(
+      "SELECT * FROM vhs_LCW_StockPrice"
+    );
+    const postProductPromise = [];
+    const response1 = await updateProductsDataToShopify(virtualProductsTable[0])
+    logger.info("Shopify Products Updated Successfully!");
+  } catch (error) {
+    throw error;
+  }
+});
 
 const processPromisesInBatches = async (promises, batchSize) => {
   try {
