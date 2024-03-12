@@ -127,6 +127,8 @@ const updateProductsDataToShopify = async (virtualProductsTable) => {
         variant: {},
       };
       let flag = false
+      await delay(1)
+
       if (product["Discounted Price"] > 0 && product["Original Price"] > 0) {
         postProductPriceParams.variant.price = product["Discounted Price"];
         postProductPriceParams.variant.compare_at_price = product["Original Price"];
