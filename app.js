@@ -132,12 +132,20 @@ const updateProductsDataToShopify = async (virtualProductsTable) => {
       if (product["Discounted Price"] > 0 && product["Original Price"] > 0) {
         postProductPriceParams.variant.price = product["Discounted Price"];
         postProductPriceParams.variant.compare_at_price = product["Original Price"];
-        await axios.put(postVariantPriceUrl, postProductPriceParams, headers);
+        try {
+          await axios.put(postVariantPriceUrl, postProductPriceParams, headers);
+        } catch (error) {
+          logger.error(`Product with id ${product.product_id} Update Price Error`, JSON.stringify(error))
+        }
         flag = true
       } else if (product["Original Price"] > 0 && product["Discounted Price"] <= 0) {
         postProductPriceParams.variant.price = product["Original Price"];
         postProductPriceParams.variant.compare_at_price = 0;
-        await axios.put(postVariantPriceUrl, postProductPriceParams, headers);
+        try {
+          await axios.put(postVariantPriceUrl, postProductPriceParams, headers);
+        } catch (error) {
+          logger.error(`Product with id ${product.product_id} update Price Error`, JSON.stringify(error))
+        }
         flag = true
       }
       if(product.Update_Stock === 0) {
@@ -150,7 +158,11 @@ const updateProductsDataToShopify = async (virtualProductsTable) => {
         available_adjustment: product.Update_Stock,
       };
       await delay(1)
-      await axios.post(postVariantStockUrl, postStockParams, headers);
+      try {
+        await axios.post(postVariantStockUrl, postStockParams, headers);
+      } catch (error) {
+       logger.error(`Product with id ${product.product_id} Update stock error`, JSON.stringify(error)) 
+      }
       logger.info(`Product with id ${product.product_id} has been updated with stock ${product["SysStock"]} and ${flag? `with price ${postProductPriceParams.variant.price}`:`no price updated`}`);
     }
     return { status: 200, message: "Data succcessfully updated!!" }
@@ -198,6 +210,28 @@ cron.schedule("0 0 * * *", async () => {
     const response1 = await updateProductsDataToShopify(virtualProductsTable[0])
     logger.info("Shopify Products Updated Successfully!");
   } catch (error) {
+    logger.error("Error Products Update!", JSON.stringify(error));
+    throw error;
+  }
+});
+
+cron.schedule("44 12 * * *", async () => {
+  try {
+    const response = await addShopifyProductsToDatabase();
+
+    // const productsIndserted = await ShopifyProductIdModel.bulkCreate(params)
+    logger.info(
+      "Shopify Products destroyed and saved Successfully in database!"
+    );
+
+    const virtualProductsTable = await sequelize.query(
+      "SELECT * FROM vhs_LCW_StockPrice"
+    );
+    const postProductPromise = [];
+    const response1 = await updateProductsDataToShopify(virtualProductsTable[0])
+    logger.info("Shopify Products Updated Successfully!");
+  } catch (error) {
+    logger.error("Error Products Update!", JSON.stringify(error));
     throw error;
   }
 });
